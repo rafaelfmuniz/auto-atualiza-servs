@@ -14,19 +14,19 @@ function download_script {
 
 function create_dir {
   local dir="$1"
-  mkdir -p "$dir"
+  sudo mkdir -p "$dir"
 }
 
 function install_script {
   local script="$1"
-  sudo cp "$script" "$DEST_DIR"
+  sudo cp "$script" "$DEST_DIR" || true  # Ignora erro se o arquivo já existir
   sudo chmod +x "$DEST_DIR/$script"
 }
 
 function configure_cron {
-  crontab -l > mycron
+  sudo crontab -l > mycron 2>/dev/null  # Redireciona erros para /dev/null
   echo "$CRON_COMMAND" >> mycron
-  crontab mycron
+  sudo crontab mycron
   rm mycron
 }
 
@@ -43,3 +43,4 @@ install_script "$DEST_DIR/atualiza_e_reinicia.sh"
 configure_cron
 
 echo "Script de atualização instalado e configurado para rodar via cron."
+
