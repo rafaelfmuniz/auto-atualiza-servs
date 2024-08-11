@@ -4,6 +4,7 @@
 SCRIPT_DIR="/opt/scripts"
 UPDATE_SCRIPT="update.sh"
 LOG_FILE="/var/log/update.log"
+HASH_FILE="sha256sum.txt"  # Arquivo com o hash SHA256 do script
 
 # Função para registrar logs
 function log() {
@@ -12,15 +13,17 @@ function log() {
 
 # Função para obter a versão do script
 function get_version() {
-  local script="$1"
-  # Assumindo que a versão está em uma linha específica com o formato "VERSION=1.2.3"
-  grep -Po 'VERSION=\K\d+\.\d+\.\d+' "$script"
+  grep -Po 'VERSION=\K\d+\.\d+\.\d+' "$1"
 }
 
-# Função para baixar o novo script
+# Função para baixar o novo script e verificar a integridade
 function download_script() {
-  # ... código para baixar o script
-  # Verificar integridade do arquivo baixado
+  wget -O "$UPDATE_SCRIPT.tmp" "https://meu-servidor/update.sh"
+  if ! sha256sum -c "$HASH_FILE"; then
+    log "Erro ao verificar a integridade do arquivo baixado."
+    exit 1
+  fi
+  mv "$UPDATE_SCRIPT.tmp" "$SCRIPT_DIR/$UPDATE_SCRIPT"
 }
 
 # Função para atualizar o script
@@ -30,8 +33,11 @@ function update_script() {
 
   if [[ "$new_version" > "$old_version" ]]; then
     log "Nova versão disponível. Atualizando..."
-    # Criar um backup (opcional)
-    cp "$SCRIPT_DIR/$UPDATE_SCRIPT" "$SCRIPT_DIR/$UPDATE_SCRIPT.bak"
+    # Verificar se o arquivo já existe e fazer backup se necessário
+    if [ -f "$SCRIPT_DIR/$UPDATE_SCRIPT" ]; then
+      log "Fazendo backup do script existente..."
+      cp "$SCRIPT_DIR/$UPDATE_SCRIPT" "$SCRIPT_DIR/$UPDATE_SCRIPT.bak"
+    fi
     # Baixar e substituir o script
     download_script
   else
@@ -39,27 +45,5 @@ function update_script() {
   fi
 }
 
-# Função para reiniciar o sistema (com opção de confirmação)
-function reiniciar_sistema() {
-  read -p "Deseja reiniciar o sistema agora? (s/n): " confirm
-  if [[ "$confirm" == "s" || "$confirm" == "S" ]]; then
-    log "Reiniciando o sistema..."
-    sudo reboot
-  else
-    log "Reinício cancelado."
-  fi
-}
-
-# Verificar se o script está sendo executado com privilégios de root
-if [[ $(id -u) != 0 ]]; then
-  echo "Este script deve ser executado como root."
-  exit 1
-fi
-
-# Executar as atualizações
+# Executar a atualização
 update_script
-
-# Verificar se o script foi atualizado com sucesso e reiniciar o sistema
-if [[ $? -eq 0 ]]; then
-  reiniciar_sistema
-fi
