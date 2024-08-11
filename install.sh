@@ -5,15 +5,27 @@ SCRIPT_DIR="/opt/scripts"
 UPDATE_SCRIPT="update.sh"
 CRON_FILE="/etc/cron.d/auto_update"
 LOG_FILE="$SCRIPT_DIR/install.log"
+UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/rafaelfmuniz/auto-atualiza-servs/main/update.sh"  # Substitua pela URL correta
 
-# Funções auxiliares
-# ... (funções semelhantes às que você já tem para baixar, criar diretório, instalar script, configurar cron)
+# Funções
+install_script() {
+    # ... código da função ...
+}
 
-# Verifica se o script já está instalado
+configure_cron() {
+    # ... código da função ...
+}
+
+download_script() {
+    local url="$1"
+    local dest="$2"
+    curl -sL "$url" > "$dest"
+}
+
+# Verifica se o script já está instalado e oferece a opção de atualização
 if [ -f "$SCRIPT_DIR/$UPDATE_SCRIPT" ]; then
     read -p "O script de atualização já está instalado. Deseja atualizá-lo? (s/n): " confirm
     if [[ $confirm =~ ^[Yy]$ ]]; then
-        # Atualiza o script
         download_script "$UPDATE_SCRIPT_URL" "$SCRIPT_DIR/$UPDATE_SCRIPT"
         echo "Script atualizado com sucesso." >> "$LOG_FILE"
     else
