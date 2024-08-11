@@ -1,17 +1,24 @@
 #!/bin/bash
 
-# Diretórios e arquivos
+# Variáveis personalizáveis
 SCRIPT_DIR="/opt/scripts"
 UPDATE_SCRIPT="update.sh"
 CRON_FILE="/etc/cron.d/auto_update"
 LOG_FILE="$SCRIPT_DIR/install.log"
 UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/rafaelfmuniz/auto-atualiza-servs/main/update.sh"
+SCRIPT_VERSION="1.0"
+
+# Habilita a interrupção do script em caso de erro
+set -e
 
 # Funções
 download_script() {
     local url="$1"
     local dest="$2"
-    curl -sL "$url" > "$dest"
+    curl -sL "$url" > "$dest" || {
+        echo "Erro ao baixar $url: $?" >> "$LOG_FILE"
+        exit 1
+    }
 }
 
 install_script() {
@@ -22,10 +29,16 @@ install_script() {
     fi
 
     # Copia o script para o diretório de destino
-    cp "$SCRIPT_DIR/$UPDATE_SCRIPT" "$SCRIPT_DIR"
+    cp "$SCRIPT_DIR/$UPDATE_SCRIPT" "$SCRIPT_DIR" || {
+        echo "Erro ao copiar o script de atualização: $?" >> "$LOG_FILE"
+        exit 1
+    }
 
     # Configura as permissões de execução
-    chmod +x "$SCRIPT_DIR/$UPDATE_SCRIPT"
+    chmod +x "$SCRIPT_DIR/$UPDATE_SCRIPT" || {
+        echo "Erro ao configurar permissões: $?" >> "$LOG_FILE"
+        exit 1
+    }
 
     # Adiciona uma mensagem ao log
     echo "Script de atualização instalado com sucesso." >> "$LOG_FILE"
@@ -39,26 +52,23 @@ configure_cron() {
 EOF
 
     # Configura as permissões do arquivo cron
-    chmod 600 "$CRON_FILE"
+    chmod 600 "$CRON_FILE" || {
+        echo "Erro ao configurar permissões do arquivo cron: $?" >> "$LOG_FILE"
+        exit 1
+    }
 }
 
-# Verifica se o script já está instalado e oferece a opção de atualização
-if [ -f "$SCRIPT_DIR/$UPDATE_SCRIPT" ]; then
-    read -p "O script de atualização já está instalado. Deseja atualizá-lo? (s/n): " confirm
-    if [[ $confirm =~ ^[Yy]$ ]]; then
-        download_script "$UPDATE_SCRIPT_URL" "$SCRIPT_DIR/$UPDATE_SCRIPT"
-        echo "Script atualizado com sucesso." >> "$LOG_FILE"
-    else
-        echo "Atualização cancelada." >> "$LOG_FILE"
-        exit 0
-    fi
-fi
+# Inicio da instalação
+echo "$(date +'%Y-%m-%d %H:%M:%S') Iniciando a instalação do script de atualização (versão $SCRIPT_VERSION)" >> "$LOG_FILE"
+
+# Baixa o script de atualização
+download_script "$UPDATE_SCRIPT_URL" "$SCRIPT_DIR/$UPDATE_SCRIPT"
 
 # Instala o script e configura o cron
 install_script
 configure_cron
 
 # Mensagem de conclusão
-echo "Instalação concluída com sucesso." >> "$LOG_FILE"
+echo "$(date +'%Y-%m-%d %H:%M:%S') Instalação concluída com sucesso." >> "$LOG_FILE"
 echo "Para verificar os logs: tail -f $LOG_FILE"
 echo "Para desinstalar: sudo bash $SCRIPT_DIR/uninstall.sh"
