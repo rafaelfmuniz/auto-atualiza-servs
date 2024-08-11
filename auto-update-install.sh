@@ -22,19 +22,34 @@ function install_script {
         read -p "O arquivo $DEST_DIR/$script já existe. Deseja substituí-lo? (s/n): " confirm
         if [[ $confirm =~ ^[Yy]$ ]]; then
             sudo cp "$script" "$DEST_DIR"
+            echo "Arquivo substituído com sucesso."
+        else
+            echo "Substituição cancelada."
         fi
     else
         sudo cp "$script" "$DEST_DIR"
+        echo "Arquivo instalado com sucesso."
     fi
     sudo chmod +x "$DEST_DIR/$script"
 }
 
 function configure_cron {
     read -p "Digite o crontab (e.g., '0 5 * * *' para rodar diariamente às 5h): " cron_expression
+
+    # Validação básica da expressão cron (pode ser aprimorada)
+    if ! [[ $cron_expression =~ ^[0-5][0-9] [0-2][0-3] [0-3][0-9] [0-1][0-2] [0-7]$ ]]; then
+        echo "Expressão cron inválida. Por favor, tente novamente."
+        return 1
+    fi
+
     sudo crontab -l > mycron 2>/dev/null
     echo "$cron_expression /opt/scripts/atualiza_e_reinicia.sh" >> mycron
-    sudo crontab mycron
+    if ! sudo crontab mycron; then
+        echo "Erro ao configurar o crontab. Verifique se a expressão cron está correta."
+        return 1
+    fi
     rm mycron
+    echo "Crontab configurado com sucesso."
 }
 
 # Criar o diretório de destino (se não existir)
@@ -48,8 +63,3 @@ install_script "$DEST_DIR/atualiza_e_reinicia.sh"
 
 # Configurar o cron
 configure_cron
-
-# Informar o usuário sobre o resultado
-echo "Script de atualização instalado em $DEST_DIR."
-echo "O script será executado de acordo com o crontab configurado:"
-echo "$cron_expression /opt/scripts/atualiza_e_reinicia.sh"
