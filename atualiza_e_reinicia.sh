@@ -2,39 +2,41 @@
 
 # Diretório para salvar os logs
 LOG_DIR="/var/log/scripts"
-
-# Cria o diretório de logs se não existir
-mkdir -p "$LOG_DIR"
+# Número máximo de dias para manter os logs (ajuste conforme necessário)
+MAX_LOG_DAYS=7
 
 # Arquivo de log principal
 LOG_FILE="$LOG_DIR/atualizacoes.log"
 
 # Função para limpar os logs mais antigos
 function limpar_logs() {
-    find "$LOG_DIR" -type f -mtime +5 -delete
+    find "$LOG_DIR" -type f -mtime +"$MAX_LOG_DAYS" -delete
 }
 
-# Data e hora atuais
-DATA_HORA=$(date +"%Y-%m-%d %H:%M:%S")
+# Função para registrar log com data e hora
+function log() {
+    local mensagem="$1"
+    echo "$(date +"%Y-%m-%d %H:%M:%S") - $mensagem" >> "$LOG_FILE"
+}
 
-# Log de início
-echo "$DATA_HORA - Iniciando atualização e reinicialização" >> "$LOG_FILE"
+# Início do script
+log "Iniciando atualização e reinicialização"
 
-# Limpa os logs antes de iniciar
+# Limpa os logs mais antigos
 limpar_logs
 
-# Atualiza o sistema
-sudo apt-get update && sudo apt-get upgrade -y
-
-# Verifica se houve alguma atualização
-if [ $? -eq 0 ]; then
-    echo "$DATA_HORA - Atualização concluída com sucesso" >> "$LOG_FILE"
-else
-    echo "$DATA_HORA - Erro ao atualizar o sistema" >> "$LOG_FILE"
+# Atualiza o sistema (substitua por pacotes específicos se necessário)
+log "Atualizando o sistema..."
+sudo apt-get update -q && sudo apt-get upgrade -y -q
+if [ $? -ne 0 ]; then
+    log "Erro ao atualizar o sistema: $(cat /var/log/apt/term.log)"
+    exit 1
 fi
+log "Atualização concluída com sucesso."
 
-# Reinicia o sistema
-sudo reboot
-
-# Log de finalização (não será executado após o reboot)
-echo "$DATA_HORA - Reinicialização iniciada" >> "$LOG_FILE"
+# Reinicia o sistema (ajuste conforme necessário)
+read -p "Deseja reiniciar o sistema agora? (s/n): " resposta
+if [[ $resposta =~ ^[Yy]$ ]]; then
+    log "Reinicializando o sistema..."
+    sudo reboot
+fi
