@@ -37,17 +37,14 @@ function configure_cron {
     read -p "Digite o crontab (e.g., '0 5 * * *' para rodar diariamente às 5h): " cron_expression
 
     # Validação básica da expressão cron (pode ser aprimorada)
-    if ! [[ $cron_expression =~ ^[0-5][0-9] [0-2][0-3] [0-3][0-9] [0-1][0-2] [0-7]$ ]]; then
+    if ! [[ "$cron_expression" =~ ^[0-5][0-9] [0-2][0-3] [0-3][0-9] [0-1][0-2] [0-7]$ ]]; then
         echo "Expressão cron inválida. Por favor, tente novamente."
         return 1
     fi
 
     sudo crontab -l > mycron 2>/dev/null
     echo "$cron_expression /opt/scripts/atualiza_e_reinicia.sh" >> mycron
-    if ! sudo crontab mycron; then
-        echo "Erro ao configurar o crontab. Verifique se a expressão cron está correta."
-        return 1
-    fi
+    sudo crontab mycron
     rm mycron
     echo "Crontab configurado com sucesso."
 }
