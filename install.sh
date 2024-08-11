@@ -8,9 +8,21 @@ LOG_FILE="$SCRIPT_DIR/install.log"
 UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/rafaelfmuniz/auto-atualiza-servs/main/update.sh"
 
 # Funções
+download_script() {
+    local url="$1"
+    local dest="$2"
+    curl -sL "$url" > "$dest"
+}
+
 install_script() {
+    # Verifica se o script foi baixado com sucesso
+    if [ ! -f "$SCRIPT_DIR/$UPDATE_SCRIPT" ]; then
+        echo "Erro: O script de atualização não foi baixado corretamente." >> "$LOG_FILE"
+        exit 1
+    fi
+
     # Copia o script para o diretório de destino
-    cp "$UPDATE_SCRIPT" "$SCRIPT_DIR"
+    cp "$SCRIPT_DIR/$UPDATE_SCRIPT" "$SCRIPT_DIR"
 
     # Configura as permissões de execução
     chmod +x "$SCRIPT_DIR/$UPDATE_SCRIPT"
@@ -30,12 +42,6 @@ EOF
     chmod 600 "$CRON_FILE"
 }
 
-download_script() {
-    local url="$1"
-    local dest="$2"
-    curl -sL "$url" > "$dest"
-}
-
 # Verifica se o script já está instalado e oferece a opção de atualização
 if [ -f "$SCRIPT_DIR/$UPDATE_SCRIPT" ]; then
     read -p "O script de atualização já está instalado. Deseja atualizá-lo? (s/n): " confirm
@@ -49,7 +55,7 @@ if [ -f "$SCRIPT_DIR/$UPDATE_SCRIPT" ]; then
 fi
 
 # Instala o script e configura o cron
-install_script "$SCRIPT_DIR/$UPDATE_SCRIPT"
+install_script
 configure_cron
 
 # Mensagem de conclusão
