@@ -5,15 +5,29 @@ SCRIPT_DIR="/opt/scripts"
 UPDATE_SCRIPT="update.sh"
 CRON_FILE="/etc/cron.d/auto_update"
 LOG_FILE="$SCRIPT_DIR/install.log"
-UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/rafaelfmuniz/auto-atualiza-servs/main/update.sh"  # Substitua pela URL correta
+UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/rafaelfmuniz/auto-atualiza-servs/main/update.sh"
 
 # Funções
 install_script() {
-    # ... código da função ...
+    # Copia o script para o diretório de destino
+    cp "$UPDATE_SCRIPT" "$SCRIPT_DIR"
+
+    # Configura as permissões de execução
+    chmod +x "$SCRIPT_DIR/$UPDATE_SCRIPT"
+
+    # Adiciona uma mensagem ao log
+    echo "Script de atualização instalado com sucesso." >> "$LOG_FILE"
 }
 
 configure_cron() {
-    # ... código da função ...
+    # Cria o arquivo cron
+    cat > "$CRON_FILE" <<EOF
+# Atualiza o script a cada dia
+0 0 * * * root $SCRIPT_DIR/$UPDATE_SCRIPT
+EOF
+
+    # Configura as permissões do arquivo cron
+    chmod 600 "$CRON_FILE"
 }
 
 download_script() {
